@@ -2,10 +2,13 @@ from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 
 app_core = Flask(__name__)
+
 app_core.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Database.db'
 app_core.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app_core)
+
+passwords = [1,123]
 
 class Post_Creator(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -26,17 +29,20 @@ def create_post():
     if find_post:
         return jsonify(f'Post with id: {post_id} alredy exists!')
 
-    new_post = Post_Creator(id=post_id, name=post_name)
-    db.session.add(new_post)
-    db.session.commit()
-        
-    return jsonify({
-        "message": "SuccesFully created a post",
-        "data": {
-            "id": new_post.id,
-            "name": new_post.name
-        }
-    }), 201
+    try:     
+        new_post = Post_Creator(id=post_id, name=post_name)
+        db.session.add(new_post)
+        db.session.commit()
+            
+        return jsonify({
+            "message": "SuccesFully created a post",
+            "data": {
+                "id": new_post.id,
+                "name": new_post.name
+            }
+        }), 201
+    except:
+        return jsonify({"Status" : "Failed to create a new post..."})
 
 @app_core.route('/deletepost', methods=["DELETE"])
 def delete_post():
@@ -53,7 +59,7 @@ def delete_post():
         })
     
     else:
-        return jsonify(f'Error post not found: {id}')
+        return jsonify(f'Error post not found: {id}, 404')
 
 @app_core.route('/getposts', methods = ["GET"])
 def get_posts():
@@ -62,9 +68,18 @@ def get_posts():
     result = [{'id' : post.id, 'name' : post.name} for post in find_all_posts]
 
     if result == []:
-        return jsonify('0 Users...')
+        return jsonify('0 Users...'), 404
     else:
         return jsonify(f'result: {result}')
+
+@app_core.route('/admin', methods = ["POST"])
+def admin_checker():
+    data = request.get_json()
+    password = data.get('password')
+
+    for pas in passwords:
+        if password == pas:
+            return jsonify(f'Admin')
 
 @app_core.route('/')
 def main_page():
@@ -80,7 +95,6 @@ def userslist():
         return render_template('home.html', title = '0 Users...')
     else:
         return render_template('home.html', title = f'result: {result}')
-
 
 if __name__ == '__main__':
     app_core.run(host='127.0.0.1', port=8120, debug=False)
