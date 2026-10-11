@@ -1,4 +1,4 @@
-import requests,os
+import requests,os,sys
 
 BASE_URL = 'http://127.0.0.1:8120'
 
@@ -72,6 +72,14 @@ def login(password):
     else:
         return False
 
+def check_if_logined():
+    if IS_LOGINED == True:
+        print(f'Logined: logined- {IS_LOGINED}')
+        return True
+    else:
+        print(f'User is not logined: Logined: {IS_LOGINED}')
+        sys.exit()
+
 if __name__ == "__main__":
     while True:
         result_s = data_base_checker()
@@ -85,26 +93,31 @@ if __name__ == "__main__":
             break
 
         print('|--------------------------------------------------------------------|')
-        chooser = int(input('Create post-1,Delete post-2,Get all posts-3,End Programm-4: '))
+        chooser = int(input('Create post-1,Delete post-2,Get all posts-3,Login-4,End Programm-5: '))
         if chooser == 1:
+            check_if_logined()
             name = str(input('Enter your post name: '))
             id = int(input('Enter your post id: '))
 
             result = create_post(name, id)
             print(f'result output: {result}')
         elif chooser == 2:
+            check_if_logined()
             id = int(input('Enter your post id to delete: '))
             result = delete_post(id)
             print(f'result output: {result}')
         elif chooser == 3:
+            check_if_logined()
             result = get_all_posts()
             print(f'result output: {result}')
-        # elif chooser == 4:
-        #     id = int(input('Enter password to get admin perms: '))
-        #     IS_LOGINED = login(id)
         elif chooser == 4:
+            id = int(input('Enter password to get admin perms: '))
+            IS_LOGINED = login(id)
             print('|--------------------------------------------------------------------|')
-            print('Stopping the CLIENT programm,Server is still active')
+            print('Succesfully logined as Admin')
+        elif chooser == 5:
+            print('|--------------------------------------------------------------------|')
+            print('Stopping the_CLIENT_CORE_programm')
             print('|--------------------------------------------------------------------|')
             break
         else:

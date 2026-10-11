@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 
+import os,sys
+
 app_core = Flask(__name__)
 
 app_core.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Database.db'
@@ -8,7 +10,7 @@ app_core.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app_core)
 
-passwords = [1,123]
+passwords = [1,123,555]
 
 class Post_Creator(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -41,6 +43,7 @@ def create_post():
                 "name": new_post.name
             }
         }), 201
+    
     except:
         return jsonify({"Status" : "Failed to create a new post..."})
 
@@ -96,5 +99,20 @@ def userslist():
     else:
         return render_template('home.html', title = f'result: {result}')
 
+def element_checker():
+    path_to_client = r'Client\Client_Core.py'
+    path_to_template = r'Server\templates'
+
+    if os.path.exists(path_to_client):
+        if os.path.exists(path_to_template):
+            return 200
+        else:
+            return 404
+    else:
+        return 404
+
 if __name__ == '__main__':
+    resulter = element_checker()
+    if resulter == 404: print('Cant find a programm elements...quiting the programm') , sys.exit()
+    print('Starting the Server...')
     app_core.run(host='127.0.0.1', port=8120, debug=False)
