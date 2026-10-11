@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 
 app_core = Flask(__name__)
@@ -65,6 +65,22 @@ def get_posts():
         return jsonify('0 Users...')
     else:
         return jsonify(f'result: {result}')
+
+@app_core.route('/')
+def main_page():
+    return render_template('home.html', title = 'This is home page')
+
+@app_core.route('/users')
+def userslist():
+    find_all_posts = Post_Creator.query.all()
+
+    result = [{'id' : post.id, 'name' : post.name} for post in find_all_posts]
+
+    if result == []:
+        return render_template('home.html', title = '0 Users...')
+    else:
+        return render_template('home.html', title = f'result: {result}')
+
 
 if __name__ == '__main__':
     app_core.run(host='127.0.0.1', port=8120, debug=False)
