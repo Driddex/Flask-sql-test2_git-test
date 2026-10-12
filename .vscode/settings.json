@@ -6,9 +6,10 @@
             "server": "localhost",
             "port": 8120,
             "driver": "PostgreSQL",
-            "name": "postgres",
-            "database": "Test",
-            "username": "postgres"
+            "name": "demotest",
+            "database": "demo",
+            "username": "postgres",
+            "password": "0208"
         }
     ]
 }

@@ -1,118 +1,53 @@
-from flask import Flask, request, jsonify, render_template
-from flask_sqlalchemy import SQLAlchemy
-
-import os,sys
+from flask import Flask, jsonify, request, render_template
+import psycopg2
 
 app_core = Flask(__name__)
 
-app_core.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Database.db'
-app_core.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+connection = psycopg2.connect(
+    user="postgres",
+    password='0208',
+    host='127.0.0.1',
+    port='8120',
+    database='demo'
+)
 
-db = SQLAlchemy(app_core)
+cursor = connection.cursor()
+cursor.execute("""CREATE TABLE IF NOT EXISTS data(
+    username VARCHAR(15) UNIQUE NOT NULL,
+    id INTEGER PRIMARY KEY NOT NULL
+);""")
+connection.commit()
 
-passwords = [1,123,555]
+@app_core.route('/create', methods = ["POST"])
+def Create_user():
+    data = request.get_json() or {}
 
-class Post_Creator(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(15), nullable=False)
-
-with app_core.app_context():
-    db.create_all()
-
-@app_core.route('/newpost', methods=["POST"])
-def create_post():
-    data = request.get_json()
-
-    post_id = data.get('id')
-    post_name = data.get('name', 'Template_Post-Name')
-
-    find_post = Post_Creator.query.filter_by(id=post_id).first()
-    
-    if find_post:
-        return jsonify(f'Post with id: {post_id} alredy exists!')
-
-    try:     
-        new_post = Post_Creator(id=post_id, name=post_name)
-        db.session.add(new_post)
-        db.session.commit()
-            
-        return jsonify({
-            "message": "SuccesFully created a post",
-            "data": {
-                "id": new_post.id,
-                "name": new_post.name
-            }
-        }), 201
-    
-    except:
-        return jsonify({"Status" : "Failed to create a new post..."})
-
-@app_core.route('/deletepost', methods=["DELETE"])
-def delete_post():
-    data = request.get_json()
+    name = data.get('name')
     id = data.get('id')
 
-    find_post_by_id = Post_Creator.query.filter_by(id=id).first()
-    if find_post_by_id:
-        db.session.delete(find_post_by_id)
-        db.session.commit()
+    if name and id:
+        try:
+            cursor.execute("""
+                INSERT INTO data(username, id)
+                VALUES (%s, %s);
+            """, (name, id))
+        
+            connection.commit()
+            return jsonify({'status' : 'success'})
 
-        return jsonify({
-            "Answer-From-Server:" : "Succesfully deleted a post."
-        })
-    
+        except psycopg2.errors.UniqueViolation:
+            connection.rollback()
+            return jsonify({'status' : 'error'})
+        except psycopg2.errors.NotNullViolation:
+            connection.rollback()
+            return jsonify({'status' : 'error'})
     else:
-        return jsonify(f'Error post not found: {id}, 404')
-
-@app_core.route('/getposts', methods = ["GET"])
-def get_posts():
-    find_all_posts = Post_Creator.query.all()
-
-    result = [{'id' : post.id, 'name' : post.name} for post in find_all_posts]
-
-    if result == []:
-        return jsonify('0 Users...'), 404
-    else:
-        return jsonify(f'result: {result}')
-
-@app_core.route('/admin', methods = ["POST"])
-def admin_checker():
-    data = request.get_json()
-    password = data.get('password')
-
-    for pas in passwords:
-        if password == pas:
-            return jsonify(f'Admin')
-
-@app_core.route('/')
-def main_page():
-    return render_template('home.html', title = 'This is home page')
-
-@app_core.route('/users')
-def userslist():
-    find_all_posts = Post_Creator.query.all()
-
-    result = [{'id' : post.id, 'name' : post.name} for post in find_all_posts]
-
-    if result == []:
-        return render_template('home.html', title = '0 Users...')
-    else:
-        return render_template('home.html', title = f'result: {result}')
-
-def element_checker():
-    path_to_client = r'Client\Client_Core.py'
-    path_to_template = r'Server\templates'
-
-    if os.path.exists(path_to_client):
-        if os.path.exists(path_to_template):
-            return 200
-        else:
-            return 404
-    else:
-        return 404
+        return jsonify({'status' : 'error'})
 
 if __name__ == '__main__':
-    resulter = element_checker()
-    if resulter == 404: print('Cant find a programm elements...quiting the programm') , sys.exit()
     print('Starting the Server...')
-    app_core.run(host='127.0.0.1', port=8120, debug=False)
+    try:
+        app_core.run(host='127.0.0.1', port=8000, debug=False)
+    finally:
+        cursor.close()
+        connection.close()
