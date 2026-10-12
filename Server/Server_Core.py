@@ -44,6 +44,11 @@ def Create_user():
     else:
         return jsonify({'status' : 'error'})
 
+
+@app_core.route('/delete', methods = "DELETE")
+def Delete_user():
+    data = request.get_json() or {}
+
 if __name__ == '__main__':
     print('Starting the Server...')
     try:
