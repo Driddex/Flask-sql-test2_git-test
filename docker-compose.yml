@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: '0208'
+      POSTGRES_DB: 'demo'
+    ports:
+      - 8120:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  web:
+    build: ./Server
+    container_name: flask-server
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+psycopg://postgres:0208@db:5432/demo
+    depends_on:
+      - db
+  client:
+    build: ./Client
+    container_name: flask-client
+    environment:
+      - BASE_URI=http://web:8000 
+    depends_on:
+      - web
+
+volumes:
+  pgdata:
